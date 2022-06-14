@@ -1,4 +1,3 @@
-/checkpoint
 __pycache__
 wandb/
 udc_torch_local.ipynb
