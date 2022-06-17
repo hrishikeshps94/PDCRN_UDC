@@ -2,3 +2,5 @@ __pycache__
 wandb/
 udc_torch_local.ipynb
 demo.pth
+result
+dummy.py
