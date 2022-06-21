@@ -4,3 +4,9 @@ udc_torch_local.ipynb
 demo.pth
 result
 dummy.py
+competition/
+checkpoint/
+warmup_scheduler/
+validation
+training
+ds
