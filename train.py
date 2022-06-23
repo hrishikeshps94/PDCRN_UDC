@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
-from model import UDC_Arc
+from model.PDCRN import UDC_Arc
+from model.DBWN import DBWN
 from dataset import Custom_Dataset
 import os
 import wandb
