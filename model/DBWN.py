@@ -2,11 +2,11 @@ import os
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import torch
 import torch.nn as nn
-from core import DWT,IWT
+from model.core import DWT,IWT
 from torch.nn import functional as F
 from torchsummary import summary
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+print(device)
 
 class DilationBlock(nn.Module):
     def __init__(self, in_c, rate_exponent):
@@ -30,13 +30,14 @@ class DilationBlock(nn.Module):
 class ResidualDilationBlock(nn.Module):
     def __init__(self, num_blocks, num_block_channels, rate_exponent=1):
         super(ResidualDilationBlock,self).__init__()
-        self.blocks = [DilationBlock(num_block_channels,rate_exponent) for i in range(num_blocks)]
+        self.blocks = nn.Sequential(*[DilationBlock(num_block_channels,rate_exponent) for i in range(num_blocks)])
 
     def forward(self,input):
-        block_input = input
-        for block in self.blocks:
-            block_input = block(block_input)
-        return block_input
+        # block_input = input
+        # for block in self.blocks:
+        #     block_input = block(block_input)
+        return self.blocks(input)
+        # return block_input
 
 class PALayer(nn.Module):
     def __init__(self, channel: int):
@@ -91,7 +92,7 @@ class HQNet(nn.Module):
         super(HQNet,self).__init__()
         assert num_block_groups == len(rate_exponents), "kernel size should be odd"
         self.conv_1 = nn.Conv2d(in_c,num_block_channels,3,padding='same')
-        self.block_groups = [ResidualDilationBlock(num_blocks, num_block_channels, rate_exponents[i]) for i in range(num_block_groups)]
+        self.block_groups = nn.ModuleList([ResidualDilationBlock(num_blocks, num_block_channels, rate_exponents[i]) for i in range(num_block_groups)])
         self.residual = ResidualFFABlock(num_block_channels)
         self.gate_conv = nn.Conv2d(num_block_channels * (num_block_groups+1), num_block_groups+1, 3, padding='same',bias=True)
         self.conv_2 = nn.Conv2d(num_block_channels, num_block_channels, 3, padding='same')
@@ -114,7 +115,7 @@ class HQNet(nn.Module):
 class DilationPyramid(nn.Module):
     def __init__(self, in_c, dilation_rates = [3,2,1,1]):
         super(DilationPyramid,self).__init__()   
-        self.dilated_convs = [nn.Conv2d(in_c*(i+1), in_c, 3, padding='same',dilation=dilation_rates[i]) for i in range(len(dilation_rates))]
+        self.dilated_convs = nn.ModuleList([nn.Conv2d(in_c*(i+1), in_c, 3, padding='same',dilation=dilation_rates[i]) for i in range(len(dilation_rates))])
         self.bottleneck = nn.Conv2d(in_c*(len(dilation_rates)+1), in_c, 1, padding='same')
 
     def forward(self,input):
@@ -131,7 +132,7 @@ class PDCRN(nn.Module):
     def __init__(self, in_c, block_channels, num_blocks=4, dilation_rates = [7,5,3,2,1]):
         super(PDCRN,self).__init__()
         self.conv_1 = nn.Conv2d(in_c, block_channels, 3, padding='same')
-        self.dilation_blocks = [DilationPyramid(block_channels, dilation_rates) for i in range(num_blocks)]
+        self.dilation_blocks = nn.ModuleList([DilationPyramid(block_channels, dilation_rates) for i in range(num_blocks)])
         self.conv_2 = nn.Conv2d(block_channels*4, block_channels, 3, padding='same')
         self.conv_3 = nn.Conv2d(block_channels, block_channels, 3, padding='same')
         self.conv_4 = nn.Conv2d(block_channels, 9, 1, padding='same')
@@ -184,3 +185,4 @@ class DBWN(nn.Module):
 
 # model = DBWN()
 # summary(model.to(device),(3,256,256))
+
