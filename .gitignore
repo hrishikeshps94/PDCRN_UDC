@@ -10,3 +10,8 @@ warmup_scheduler/
 validation
 training
 ds
+eta_global.npy
+eta_local.npy
+checkpoint_densen
+scoring_program
+non_normalised
