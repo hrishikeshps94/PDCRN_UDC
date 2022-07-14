@@ -28,15 +28,15 @@ class Train():
         return None
     def data_intiliaser(self):
         train_ds = Custom_Dataset(self.args.train_path,is_train=True)
-        self.train_dataloader = DataLoader(train_ds,batch_size=self.args.batch_size,shuffle=True,num_workers=os.cpu_count())
+        self.train_dataloader = DataLoader(train_ds,batch_size=self.args.batch_size,shuffle=True,num_workers=8)
         val_ds = Custom_Dataset(self.args.test_path,is_train=False)
-        self.val_dataloader = DataLoader(val_ds,batch_size=self.args.batch_size,shuffle=False,num_workers=os.cpu_count())
+        self.val_dataloader = DataLoader(val_ds,batch_size=self.args.batch_size,shuffle=False,num_workers=8)
         return None
     def init_summary(self):
         wandb.init(project=f"UDC",name=self.args.log_name)
         return
     def losses_opt_and_metrics_init(self):
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=(self.args.batch_size*0.3)/256, momentum=0.9)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.args.LR, weight_decay=1e-6)
         self.criterion = torch.nn.L1Loss().to(device)
         self.psnr  = PeakSignalNoiseRatio().to(device)
         self.ssim = StructuralSimilarityIndexMeasure().to(device)
