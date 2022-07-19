@@ -7,7 +7,7 @@ import os
 
 
 class Custom_Dataset(Dataset):
-    def __init__(self,root_dir, is_train=False):
+    def __init__(self,root_dir,im_shape=None, is_train=False):
         """
         Args:
             root_dir (string): Directory with all the images.
@@ -30,7 +30,8 @@ class Custom_Dataset(Dataset):
             self.hq_train_files[im_names] = np.load(im_names)
         for im_names in self.lq_im_file_list:
             self.lq_train_files[im_names] = np.load(im_names)
-        self.train_transform = T.Compose([T.RandomCrop((512,512))])
+        if is_train:
+            self.train_transform = T.Compose([T.RandomCrop((im_shape[0],im_shape[1]))])
     def __len__(self):
         return len(self.hq_im_file_list)
     def tone_transform(self,im,c=0.25):

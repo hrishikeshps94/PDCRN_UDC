@@ -1,7 +1,10 @@
+import sys
 import torch.nn as nn
 import torch
 import numpy as np
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+
 class DWT(nn.Module):
     def __init__(self):
         super(DWT,self).__init__()
@@ -19,9 +22,10 @@ class DWT(nn.Module):
         return torch.cat([y1, y2, y3, y4], axis=1)
 
 class IWT(nn.Module):
-    def __init__(self,scale=2):
+    def __init__(self,scale=2,device_name='cuda:0'):
         super(IWT,self).__init__()
         self.upsampler = nn.PixelShuffle(scale)
+        self.device = device_name
 
     def kernel_build(self,input_shape):
         c = input_shape[1]
@@ -33,7 +37,7 @@ class IWT(nn.Module):
             kernel[idx+out_c,idx::out_c,0,0]    = [1,-1, 1,-1]
             kernel[idx+out_c*2,idx::out_c,0,0]  = [1, 1,-1,-1]
             kernel[idx+out_c*3,idx::out_c,0,0]  = [1,-1,-1, 1]
-        self.kernel = torch.tensor(data=kernel,dtype=torch.float32,requires_grad=True).to(device)
+        self.kernel = torch.tensor(data=kernel,dtype=torch.float32,requires_grad=True).to(self.device)
         return None
 
     def forward(self,input):

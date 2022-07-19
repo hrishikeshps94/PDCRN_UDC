@@ -1,12 +1,8 @@
-import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import torch
 import torch.nn as nn
+from zmq import device
 from model.core import DWT,IWT
 from torch.nn import functional as F
-from torchsummary import summary
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
 
 class DilationBlock(nn.Module):
     def __init__(self, in_c, rate_exponent):
@@ -158,13 +154,13 @@ class PDCRN(nn.Module):
         # x_out_bias = F.interpolate(self.conv_5(x_out),scale_factor=2, mode='bilenear', align_corners=True)
         return x_out_gain, x_out_bias
 
-class DBWN(nn.Module):
-    def __init__(self):
-        super(DBWN,self).__init__()
+class DBWN_D(nn.Module):
+    def __init__(self,device,num_filters=32):
+        super(DBWN_D,self).__init__()
         self.dwt = DWT()
-        self.idwt = IWT()
-        self.hq_net = HQNet(9, 3, 4, 32, [1,2,3])
-        self.lr_net = PDCRN(3, 32)
+        self.idwt = IWT(device_name=device)
+        self.hq_net = HQNet(9, 3, 4, num_filters, [1,2,3])
+        self.lr_net = PDCRN(3, num_filters)
 
     def forward(self,input):
         x = self.dwt(input)
@@ -182,7 +178,4 @@ class DBWN(nn.Module):
                               (xlq_gain[:,6:]*xhq).sum(dim=1).unsqueeze(1)), dim=1)
         x_out = x_affine + xlq_bias
         return x_out
-
-# model = DBWN()
-# summary(model.to(device),(3,256,256))
 
