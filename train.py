@@ -142,7 +142,8 @@ class Train():
         for epoch in range(self.current_epoch,self.args.epochs):
             self.current_epoch = epoch
             self.train_epoch()
-            self.val_epoch()
+            if epoch%10==0:
+                self.val_epoch()
         return None
 
 
