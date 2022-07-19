@@ -1,8 +1,8 @@
-from turtle import forward
 import torch
 import torch.nn as nn
 from core import IWT, SeparableConv2d,DWT
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
 
 class SmoothedDilatedResidualBlock(nn.Module):
     def __init__(self,kernels=(1,3,7,15),dilations=(1,2,4,8),num_filters=64) -> None:
@@ -75,13 +75,13 @@ class HighFrequencyReconstructionNet(nn.Module):
 
 
 
-class DBWN(nn.Module):
-    def __init__(self) -> None:
-        super(DBWN,self).__init__()
+class DBWN_H(nn.Module):
+    def __init__(self,device,num_filters=32) -> None:
+        super(DBWN_H,self).__init__()
         self.downsampler = DWT()
-        self.HF_layer = HighFrequencyReconstructionNet(in_ch=12,out_ch=24,num_filters=32)
-        self.LF_layer = LowFrequencyReconstructNet(in_ch=3,out_ch=12,num_filters=64)
-        self.upsampler_HF = IWT()
+        self.HF_layer = HighFrequencyReconstructionNet(in_ch=12,out_ch=24,num_filters=num_filters)
+        self.LF_layer = LowFrequencyReconstructNet(in_ch=3,out_ch=12,num_filters=num_filters*2)
+        self.upsampler_HF = IWT(device_name=device)
         self.upsampler_LF = nn.Upsample(scale_factor=4)
     def forward(self,input):
         x_HF = self.downsampler(input)
@@ -96,9 +96,6 @@ class DBWN(nn.Module):
         x_out = torch.einsum('blhw,bchw->bchw',gamma,x_HF_inter)+etta
         return x_out
 
-# model = DBWN().to(device)
-# out = model(torch.randn(1,3,256,256).to(device))
-# print(out.shape)
 
 
 

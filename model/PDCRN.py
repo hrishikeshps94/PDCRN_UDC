@@ -39,7 +39,7 @@ class PyramidBlock(nn.Module):
 
 
 class UDC_Arc(nn.Module):
-    def __init__(self,in_ch,num_filters,dilation_rates,nPyramidFilters):
+    def __init__(self,device,in_ch,num_filters,dilation_rates,nPyramidFilters):
         super(UDC_Arc,self).__init__()
         self.encoder = nn.Sequential(*nn.ModuleList([DWT(),nn.PixelUnshuffle(downscale_factor=2),\
         nn.Conv2d(in_channels=in_ch*4*4,out_channels=num_filters,kernel_size=5,padding='same'),\
@@ -55,7 +55,7 @@ class UDC_Arc(nn.Module):
         PyramidBlock(num_filters*2,dilation_rates,nPyramidFilters*2),\
         nn.ConvTranspose2d(num_filters*2,num_filters,kernel_size = 4,stride=2,padding=1),\
         PyramidBlock(num_filters,dilation_rates,nPyramidFilters),\
-        nn.PixelShuffle(upscale_factor=2),nn.Conv2d(num_filters//4,in_ch*4,3,padding='same'),IWT(),\
+        nn.PixelShuffle(upscale_factor=2),nn.Conv2d(num_filters//4,in_ch*4,3,padding='same'),IWT(device_name=device),\
         nn.Tanh()
         ]))
     def forward(self,input):
