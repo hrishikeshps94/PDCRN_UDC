@@ -9,8 +9,12 @@ class DilationPyramid(nn.Module):
         super(DilationPyramid,self).__init__()
         self.layer_1 = nn.Conv2d(num_filters,num_filters*2,3,padding='same')
         self.layer_2 = nn.Conv2d(num_filters*2,num_filters,3,padding='same',dilation=dilation_rates[0])
-        self.layer_3 = nn.Sequential(*[nn.Conv2d(num_filters,num_filters,3,padding='same',dilation=dil_rate),nn.ReLU(), \
-            for dil_rate in dilation_rates[1:]])
+        self.layer_3 = []
+        for dil_rate in dilation_rates[1:]:
+          self.layer_3.append(nn.Conv2d(num_filters,num_filters,3,padding='same',dilation=dil_rate))
+          self.layer_3.append(nn.ReLU())
+        self.layer_3 = nn.Sequential(*self.layer_3)
+        # self.layer_3 = nn.Sequential(*[[nn.Conv2d(num_filters,num_filters,3,padding='same',dilation=dil_rate),nn.ReLU()] for dil_rate in dilation_rates[1:]])
         self.layer_4 = nn.Conv2d(num_filters*2,num_filters,1,padding='same')
     def forward(self,input):
         x = self.layer_1(input)
