@@ -8,6 +8,7 @@ import wandb
 from torchmetrics import PeakSignalNoiseRatio,StructuralSimilarityIndexMeasure
 import tqdm
 from torchsummary import summary
+import numpy as np
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -82,8 +83,10 @@ class Train():
         self.optimizer.load_state_dict(data['optimizer_state_dict'])
         print(f"Restored model at epoch {self.current_epoch}.")
 
-    def val_epoch(self):
+    def val_epoch(self,checkpoint_folder,model_type,best_psnr):
         self.model.eval()
+        psnr_value = []
+        ssim_value = []
         for inputs, gt in tqdm.tqdm(self.val_dataloader):
             inputs = inputs.to(device)
             gt = gt.to(device)
@@ -91,23 +94,23 @@ class Train():
             with torch.set_grad_enabled(False):
                 outputs = self.model(inputs)
                 _ = self.criterion(outputs,gt)
-            self.psnr.update(outputs,gt)
-            self.ssim.update(outputs,gt)
-        wandb.log({'val_psnr':self.psnr.compute().item()})
-        wandb.log({'val_ssim':self.ssim.compute().item()})
-        val_psnr,val_ssim = self.psnr.compute().item(),self.ssim.compute().item()
-        self.psnr.reset()
-        self.ssim.reset()
-        if val_psnr>self.best_psnr:
+            psnr_value.append(self.psnr(outputs,gt).item())
+            ssim_value.append(self.ssim(outputs,gt).item())
+        wandb.log({'val_psnr':np.mean(psnr_value)})
+        wandb.log({'val_ssim':np.mean(ssim_value)})
+        val_psnr = np.mean(psnr_value)
+        val_ssim = np.mean(ssim_value)
+
+        if val_psnr>best_psnr:
             self.best_psnr = val_psnr
-            self.save_checkpoint('best')
-        else:
-            self.save_checkpoint('last')
+            self.save_checkpoint(checkpoint_folder,model_type,'best')
         if val_ssim>self.best_ssim:
             self.best_ssim = val_ssim
-        print(f'Epoch = {self.current_epoch} Val best PSNR = {self.best_psnr},Val best SSIM= {self.best_ssim},\
-            Val current PSNR = {val_psnr},Val currentSSIM= {val_ssim}')
-        return None
+        else:
+            self.save_checkpoint(checkpoint_folder,model_type,'last')
+        current_lr = self.optimizer.param_groups[0]['lr']
+        print(f'Epoch = {self.current_epoch} Val best PSNR = {best_psnr},Val current PSNR = {val_psnr}, lr ={current_lr}')
+        return best_psnr
     def run(self):
         self.load_model_checkpoint_for_training()
         for epoch in range(self.current_epoch,self.args.epochs):
