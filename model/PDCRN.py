@@ -1,8 +1,7 @@
-from turtle import forward
 import torch
 import torch.nn as nn
 from core import DWT,IWT
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 class DilationPyramid(nn.Module):
     def __init__(self,num_filters,dilation_rates):
@@ -56,9 +55,10 @@ class UDC_Arc(nn.Module):
         nn.ConvTranspose2d(num_filters*2,num_filters,kernel_size = 4,stride=2,padding=1),\
         PyramidBlock(num_filters,dilation_rates,nPyramidFilters),\
         nn.PixelShuffle(upscale_factor=2),nn.Conv2d(num_filters//4,in_ch*4,3,padding='same'),IWT(device_name=device),\
-        nn.Tanh()
+        # nn.Tanh()
         ]))
     def forward(self,input):
         x_enc = self.encoder(input)
         x_dec = self.decoder(x_enc)
+        x_dec = torch.minimum(torch.maximum(torch.zeros_like(x_dec),x_dec),torch.ones_like(x_dec))
         return x_dec
