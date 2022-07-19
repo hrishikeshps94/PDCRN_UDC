@@ -23,7 +23,7 @@ if __name__ == '__main__':
     main_path = os.path.dirname(os.path.abspath(__file__))
     arg_parser.add_argument('--mode', type=str, choices=['test', 'train'], default='train')
     arg_parser.add_argument('--checkpoint_folder', type=str, default='checkpoint')
-    arg_parser.add_argument('--model_type', type=str, default='DBWN_D')
+    arg_parser.add_argument('--model_type', type=str, default='PDCRN_CR',help='Curretly availabel models are PDCRN,DWBNH,DWBND')
     arg_parser.add_argument('--train_path', type=str, default='ds/val')
     arg_parser.add_argument('--test_path', type=str, default='ds/val')
     arg_parser.add_argument('--im_shape', type=tuple, default=(256,256))

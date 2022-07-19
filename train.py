@@ -6,6 +6,7 @@ from model.PDCRN import UDC_Arc
 from model.DBWN_D import DBWN_D
 from model.DBWN_H import DBWN_H
 from dataset import Custom_Dataset
+from losses import ContrastLoss
 import os
 import wandb
 import pyiqa
@@ -25,13 +26,15 @@ class Train():
         self.init_summary()
     def model_intiliaser(self):
         if self.args.model_type.endswith("CR"):
-            self.args.model_type = self.args.model_type.split('_')[0]
-        print(f'Model Name = {self.args.model_type}')
-        if self.args.model_type=='PDCRN':
+            model_name = self.args.model_type.split('_')[0]
+        else:
+            model_name = self.args.model_type
+        print(f'Model Name = {model_name}')
+        if model_name=='PDCRN':
             self.model = UDC_Arc(self.args.device,self.args.in_ch,self.args.num_filters,self.args.dilation_rates,self.args.nPyramidFilters)
-        elif self.args.model_type=='DBWN_D':
+        elif model_name=='DBWND':
             self.model = DBWN_D(self.args.device,num_filters = self.args.num_filters)
-        elif self.args.model_type=='DBWN_H':
+        elif model_name=='DBWNH':
             self.model = DBWN_H(self.args.device,num_filters = self.args.num_filters)
         else:
             print("Enter a valid model name")
@@ -51,6 +54,8 @@ class Train():
         total_count = self.args.epochs*len(self.train_dataloader)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.args.LR)
         self.scheduler = CosineAnnealingLR(self.optimizer,total_count,self.args.LR*(10**(-4)))
+        if self.args.model_type.endswith('CR'):
+            self.criterion_CR = ContrastLoss(self.args.device)
         self.criterion = torch.nn.L1Loss().to(self.args.device)
         # self.psnr  = PeakSignalNoiseRatio().to(self.args.device)
         # self.ssim = StructuralSimilarityIndexMeasure().to(self.args.device)
@@ -66,6 +71,8 @@ class Train():
             with torch.set_grad_enabled(True):
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs,gt)
+                if self.args.model_type.endswith('CR'):
+                    loss+=0.1*self.criterion_CR(outputs,gt,inputs)
                 loss.backward()
                 self.optimizer.step()
                 self.scheduler.step()
