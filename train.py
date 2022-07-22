@@ -10,6 +10,7 @@ from losses import ContrastLoss
 import os
 import wandb
 import pyiqa
+from torchmetrics import PeakSignalNoiseRatio,StructuralSimilarityIndexMeasure
 import tqdm
 from torchsummary import summary
 import numpy as np
@@ -25,7 +26,7 @@ class Train():
         self.losses_opt_and_metrics_init()
         self.init_summary()
     def model_intiliaser(self):
-        if self.args.model_type.endswith("CR") or self.args.model_type.endswith('CR@ICVGIP') or self.args.model_type.endswith('ICVGIP'):
+        if self.args.model_type.endswith("CR"):
             model_name = self.args.model_type.split('_')[0]
         else:
             model_name = self.args.model_type
@@ -57,10 +58,10 @@ class Train():
         if self.args.model_type.endswith('CR'):
             self.criterion_CR = ContrastLoss(self.args.device)
         self.criterion = torch.nn.L1Loss().to(self.args.device)
-        # self.psnr  = PeakSignalNoiseRatio().to(self.args.device)
-        # self.ssim = StructuralSimilarityIndexMeasure().to(self.args.device)
-        self.psnr = pyiqa.create_metric('psnr').to(self.args.device)
-        self.ssim = pyiqa.create_metric('ssim').to(self.args.device)
+        self.psnr  = PeakSignalNoiseRatio().to(self.args.device)
+        self.ssim = StructuralSimilarityIndexMeasure().to(self.args.device)
+        # self.psnr = pyiqa.create_metric('psnr',device=self.args.device)
+        # self.ssim = pyiqa.create_metric('ssim',device = self.args.device)
 
     def train_epoch(self):
         self.model.train()
@@ -94,7 +95,7 @@ class Train():
         }
         torch.save(save_data, checkpoint_filename)
 
-    def load_model_checkpoint_for_training(self,type ='last'):
+    def load_model_checkpoint_for_training(self,type ='best'):
         checkpoint_folder = os.path.join(self.args.checkpoint_folder,self.args.model_type)
         checkpoint_filename = os.path.join(checkpoint_folder, f'{type}.pth')
         if not os.path.exists(checkpoint_filename):
@@ -120,12 +121,20 @@ class Train():
             with torch.set_grad_enabled(False):
                 outputs = self.model(inputs)
                 _ = self.criterion(outputs,gt)
-            psnr_value.append(self.psnr(outputs,gt).item())
-            ssim_value.append(self.ssim(outputs,gt).item())
-        wandb.log({'val_psnr':np.mean(psnr_value)})
-        wandb.log({'val_ssim':np.mean(ssim_value)})
-        val_psnr = np.mean(psnr_value)
-        val_ssim = np.mean(ssim_value)
+            self.psnr.update(outputs,gt)
+            # self.ssim.update(outputs,gt)
+        wandb.log({'val_psnr':self.psnr.compute()})
+        # wandb.log({'val_ssim':self.ssim.compute()})
+        #     psnr_value.append(self.psnr(outputs,gt).item())
+        #     ssim_value.append(self.ssim(outputs,gt).item())
+        # wandb.log({'val_psnr':np.mean(psnr_value)})
+        # wandb.log({'val_ssim':np.mean(ssim_value)})
+        # val_psnr = np.mean(psnr_value)
+        # val_ssim = np.mean(ssim_value)
+        val_psnr = self.psnr.compute()
+        val_ssim = 0
+        self.psnr.reset()
+        # self.ssim.reset()
 
         if val_psnr>self.best_psnr:
             self.best_psnr = val_psnr
@@ -142,6 +151,8 @@ class Train():
         for epoch in range(self.current_epoch,self.args.epochs):
             self.current_epoch = epoch
             self.train_epoch()
+            # if epoch%10==0:
+            #     self.val_epoch()
             self.val_epoch()
         return None
 
