@@ -161,6 +161,7 @@ class DBWN_D(nn.Module):
         self.idwt = IWT(device_name=device)
         self.hq_net = HQNet(9, 3, 4, num_filters, [1,2,3])
         self.lr_net = PDCRN(3, num_filters)
+        self.relu = nn.ReLU()
 
     def forward(self,input):
         x = self.dwt(input)
@@ -177,5 +178,6 @@ class DBWN_D(nn.Module):
                               (xlq_gain[:,3:6]*xhq).sum(dim=1).unsqueeze(1),\
                               (xlq_gain[:,6:]*xhq).sum(dim=1).unsqueeze(1)), dim=1)
         x_out = x_affine + xlq_bias
+        x_out = self.relu(x_out)
         return x_out
 
