@@ -83,6 +83,7 @@ class DBWN_H(nn.Module):
         self.LF_layer = LowFrequencyReconstructNet(in_ch=3,out_ch=12,num_filters=num_filters*2)
         self.upsampler_HF = IWT(device_name=device)
         self.upsampler_LF = nn.Upsample(scale_factor=4)
+        self.relu = nn.ReLU()
     def forward(self,input):
         x_HF = self.downsampler(input)
         x_LF = self.downsampler(x_HF[:,:3,:,:])[:,:3,:,:]
@@ -94,6 +95,7 @@ class DBWN_H(nn.Module):
         gamma  = self.upsampler_LF(x_LF_out[:,:9,:,:])
         etta = self.upsampler_LF(x_LF_out[:,9:,:,:])
         x_out = torch.einsum('blhw,bchw->bchw',gamma,x_HF_inter)+etta
+        x_out = self.relu(x_out)
         return x_out
 
 

@@ -56,9 +56,11 @@ class UDC_Arc(nn.Module):
         nn.ConvTranspose2d(num_filters*2,num_filters,kernel_size = 4,stride=2,padding=1),\
         PyramidBlock(num_filters,dilation_rates,nPyramidFilters),\
         nn.PixelShuffle(upscale_factor=2),nn.Conv2d(num_filters//4,in_ch*4,3,padding='same'),IWT(device_name=device),\
-        nn.Tanh()
+        # nn.Tanh()
         ]))
+        self.relu = nn.ReLU()
     def forward(self,input):
         x_enc = self.encoder(input)
         x_dec = self.decoder(x_enc)
+        x_dec = self.relu(x_dec)
         return x_dec

@@ -27,21 +27,20 @@ class Custom_Dataset(Dataset):
                 elif dir_path.endswith('input'):
                     self.lq_im_file_list.append(os.path.join(dir_path,f_paths))
         for im_names in self.hq_im_file_list:
-            self.hq_train_files[im_names] = np.load(im_names)
+            self.hq_train_files[im_names] = Image.open(im_names)
         for im_names in self.lq_im_file_list:
-            self.lq_train_files[im_names] = np.load(im_names)
+            self.lq_train_files[im_names] = Image.open(im_names)
         if is_train:
             self.train_transform = T.Compose([T.RandomCrop((im_shape[0],im_shape[1]))])
+        self.tensor_transform = T.ToTensor()
     def __len__(self):
         return len(self.hq_im_file_list)
-    def tone_transform(self,im,c=0.25):
-      mapped_x = im / (im + c)
-      return mapped_x
+
     def __getitem__(self, idx):
         image_hq_fname = self.hq_train_files[self.hq_im_file_list[idx]]
         image_lq_fname = self.lq_train_files[self.lq_im_file_list[idx]]
-        hq_image = torch.from_numpy(self.tone_transform(image_hq_fname)).unsqueeze(dim=0).permute(0,3,1,2)
-        lq_image = torch.from_numpy(self.tone_transform(image_lq_fname)).unsqueeze(dim=0).permute(0,3,1,2)
+        hq_image = self.tensor_transform(image_hq_fname).unsqueeze(dim=0)
+        lq_image = self.tensor_transform(image_lq_fname).unsqueeze(dim=0)
         concat_img = torch.cat([hq_image,lq_image],dim=0)
         if self.is_train:
             image = self.train_transform(concat_img)

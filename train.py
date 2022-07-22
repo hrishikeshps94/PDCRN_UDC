@@ -25,7 +25,7 @@ class Train():
         self.losses_opt_and_metrics_init()
         self.init_summary()
     def model_intiliaser(self):
-        if self.args.model_type.endswith("CR"):
+        if self.args.model_type.endswith("CR") or self.args.model_type.endswith('CR@ICVGIP') or self.args.model_type.endswith('ICVGIP'):
             model_name = self.args.model_type.split('_')[0]
         else:
             model_name = self.args.model_type
