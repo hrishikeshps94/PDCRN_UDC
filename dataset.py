@@ -27,9 +27,9 @@ class Custom_Dataset(Dataset):
                 elif dir_path.endswith('input'):
                     self.lq_im_file_list.append(os.path.join(dir_path,f_paths))
         for im_names in self.hq_im_file_list:
-            self.hq_train_files[im_names] = Image.open(im_names)
+            self.hq_train_files[im_names] = Image.open(im_names).convert('RGB')
         for im_names in self.lq_im_file_list:
-            self.lq_train_files[im_names] = Image.open(im_names)
+            self.lq_train_files[im_names] = Image.open(im_names).convert('RGB')
         if is_train:
             self.train_transform = T.Compose([T.RandomCrop((im_shape[0],im_shape[1]))])
         self.tensor_transform = T.ToTensor()

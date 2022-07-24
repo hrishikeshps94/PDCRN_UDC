@@ -15,6 +15,12 @@ import tqdm
 from torchsummary import summary
 import numpy as np
 from torch.optim.lr_scheduler import CosineAnnealingLR
+import time
+
+
+obj = time.localtime()
+code_start_time = time.asctime(obj)
+
 class Train():
     def __init__(self,args) -> None:
         self.args = args
@@ -49,7 +55,7 @@ class Train():
         self.val_dataloader = DataLoader(val_ds,batch_size=1,shuffle=False,num_workers=8)
         return None
     def init_summary(self):
-        wandb.init(project=f"{self.args.model_type}",name=self.args.log_name)
+        wandb.init(project=f"{self.args.model_type}",name=f"{self.args.model_type}_{code_start_time}")
         return
     def losses_opt_and_metrics_init(self):
         total_count = self.args.epochs*len(self.train_dataloader)
@@ -58,10 +64,10 @@ class Train():
         if self.args.model_type.endswith('CR'):
             self.criterion_CR = ContrastLoss(self.args.device)
         self.criterion = torch.nn.L1Loss().to(self.args.device)
-        self.psnr  = PeakSignalNoiseRatio().to(self.args.device)
-        self.ssim = StructuralSimilarityIndexMeasure().to(self.args.device)
-        # self.psnr = pyiqa.create_metric('psnr',device=self.args.device)
-        # self.ssim = pyiqa.create_metric('ssim',device = self.args.device)
+        # self.psnr  = PeakSignalNoiseRatio().to(self.args.device)
+        # self.ssim = StructuralSimilarityIndexMeasure().to(self.args.device)
+        self.psnr = pyiqa.create_metric('psnr').to(self.args.device)
+        self.ssim = pyiqa.create_metric('ssim').to(self.args.device)
 
     def train_epoch(self):
         self.model.train()
@@ -121,19 +127,19 @@ class Train():
             with torch.set_grad_enabled(False):
                 outputs = self.model(inputs)
                 _ = self.criterion(outputs,gt)
-            self.psnr.update(outputs,gt)
-            # self.ssim.update(outputs,gt)
-        wandb.log({'val_psnr':self.psnr.compute()})
+            # self.psnr.update(outputs,gt)
+            # # self.ssim.update(outputs,gt)
+        # wandb.log({'val_psnr':self.psnr.compute()})
         # wandb.log({'val_ssim':self.ssim.compute()})
-        #     psnr_value.append(self.psnr(outputs,gt).item())
-        #     ssim_value.append(self.ssim(outputs,gt).item())
-        # wandb.log({'val_psnr':np.mean(psnr_value)})
-        # wandb.log({'val_ssim':np.mean(ssim_value)})
-        # val_psnr = np.mean(psnr_value)
-        # val_ssim = np.mean(ssim_value)
-        val_psnr = self.psnr.compute()
-        val_ssim = 0
-        self.psnr.reset()
+            psnr_value.append(self.psnr(outputs,gt).item())
+            ssim_value.append(self.ssim(outputs,gt).item())
+        wandb.log({'val_psnr':np.mean(psnr_value)})
+        wandb.log({'val_ssim':np.mean(ssim_value)})
+        val_psnr = np.mean(psnr_value)
+        val_ssim = np.mean(ssim_value)
+        # val_psnr = self.psnr.compute()
+        # val_ssim = 0
+        # self.psnr.reset()
         # self.ssim.reset()
 
         if val_psnr>self.best_psnr:
