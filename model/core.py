@@ -37,7 +37,7 @@ class IWT(nn.Module):
             kernel[idx+out_c,idx::out_c,0,0]    = [1,-1, 1,-1]
             kernel[idx+out_c*2,idx::out_c,0,0]  = [1, 1,-1,-1]
             kernel[idx+out_c*3,idx::out_c,0,0]  = [1,-1,-1, 1]
-        self.kernel = torch.tensor(data=kernel,dtype=torch.float32,requires_grad=True).to(self.device)
+        self.kernel = torch.tensor(data=kernel,dtype=torch.float32,requires_grad=True).cuda()
         return None
 
     def forward(self,input):

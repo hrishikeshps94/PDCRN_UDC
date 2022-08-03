@@ -4,8 +4,8 @@ from train import Train
 import torch
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(f'Device used to train the model is {device}')
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# print(f'Device used to train the model is {device}')
 def main(arg_list):
     if arg_list.mode == 'train':
         train_pipe = Train(arg_list)
@@ -35,6 +35,11 @@ if __name__ == '__main__':
     arg_parser.add_argument('--nPyramidFilters', type=int, default=64)
     arg_parser.add_argument('--log_name', type=str, default='logger')
     arg_parser.add_argument('--in_ch', type=int, default=3)
-    arg_parser.add_argument('--device', type=int, default=device)
+    # arg_parser.add_argument('--device', type=int, default=device)
+    arg_parser.add_argument('--seed', default=0, type=int, help='Random seed.')
+    arg_parser.add_argument('--num_workers', default=8, type=int, help='Number of data loading workers per GPU.')
+    arg_parser.add_argument("--dist_url", default="env://", type=str, help="""url used to set up
+        distributed training; see https://pytorch.org/docs/stable/distributed.html""")
+    arg_parser.add_argument("--local_rank", default=0, type=int, help="Please ignore and do not set this argument.")
     arg_list = arg_parser.parse_args()
     main(arg_list)
