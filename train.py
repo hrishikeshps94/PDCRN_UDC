@@ -16,6 +16,7 @@ import numpy as np
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import torch.distributed as dist
 import torch.backends.cudnn as cudnn
+from utils import save_on_master
 class Train():
     def __init__(self,args) -> None:
         self.args = args
@@ -125,9 +126,11 @@ class Train():
             'optimizer_state_dict': self.optimizer.state_dict(),
             'scheduler_state_dict': self.scheduler.state_dict()
         }
-        torch.save(save_data, checkpoint_filename)
+        if save_on_master():
+            print('helo')
+            torch.save(save_data, checkpoint_filename)
 
-    def load_model_checkpoint_for_training(self,type ='last'):
+    def load_model_checkpoint_for_training(self,type ='best'):
         checkpoint_folder = os.path.join(self.args.checkpoint_folder,self.args.model_type)
         checkpoint_filename = os.path.join(checkpoint_folder, f'{type}.pth')
         if not os.path.exists(checkpoint_filename):
@@ -137,7 +140,7 @@ class Train():
         self.current_epoch = data['step']
         self.best_psnr = data['best_psnr']
         self.best_ssim = data['best_ssim']
-        self.model.load_state_dict(data['generator_state_dict'])
+        self.model.load_state_dict(data['generator_state_dict'],strict=False)
         self.optimizer.load_state_dict(data['optimizer_state_dict'])
         self.scheduler.load_state_dict(data['scheduler_state_dict'])
         print(f"Restored model at epoch {self.current_epoch}.")
@@ -166,8 +169,7 @@ class Train():
             self.save_checkpoint('best')
         if val_ssim>self.best_ssim:
             self.best_ssim = val_ssim
-        else:
-            self.save_checkpoint('last')
+        self.save_checkpoint('last')
         current_lr = self.optimizer.param_groups[0]['lr']
         print(f'Epoch = {self.current_epoch} Val best PSNR = {self.best_psnr},Val current PSNR = {val_psnr},Val best SSIM = {self.best_ssim},Val current SSIM = {val_ssim}, lr ={current_lr}')
         return None
