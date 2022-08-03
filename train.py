@@ -59,8 +59,8 @@ class Train():
         self.criterion = torch.nn.L1Loss().to(self.args.device)
         # self.psnr  = PeakSignalNoiseRatio().to(self.args.device)
         # self.ssim = StructuralSimilarityIndexMeasure().to(self.args.device)
-        self.psnr = pyiqa.create_metric('psnr',self.args.device)
-        self.ssim = pyiqa.create_metric('ssim',self.args.device)
+        self.psnr = pyiqa.create_metric('psnr',device = self.args.device)
+        self.ssim = pyiqa.create_metric('ssim',device = self.args.device)
 
     def train_epoch(self):
         self.model.train()
