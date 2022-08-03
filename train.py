@@ -5,7 +5,7 @@ sys.path.append('model/')
 from model.PDCRN import UDC_Arc
 from model.DBWN_D import DBWN_D
 from model.DBWN_H import DBWN_H
-from dataset.dataset import Custom_Dataset
+from dataset.dataset_UDC import Custom_Dataset
 from losses import ContrastLoss
 import os
 import wandb
