@@ -127,7 +127,6 @@ class Train():
             'scheduler_state_dict': self.scheduler.state_dict()
         }
         if save_on_master():
-            print('helo')
             torch.save(save_data, checkpoint_filename)
 
     def load_model_checkpoint_for_training(self,type ='best'):
