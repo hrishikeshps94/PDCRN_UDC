@@ -20,7 +20,6 @@ def main(arg_list):
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description="Get command-line arguments.")
-    main_path = os.path.dirname(os.path.abspath(__file__))
     arg_parser.add_argument('--mode', type=str, choices=['test', 'train'], default='train')
     arg_parser.add_argument('--checkpoint_folder', type=str, default='checkpoint')
     arg_parser.add_argument('--model_type', type=str, default='PDCRN_CR',help='Curretly availabel models are PDCRN,DWBNH,DWBND')

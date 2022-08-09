@@ -5,7 +5,7 @@ sys.path.append('model/')
 from model.PDCRN import UDC_Arc
 from model.DBWN_D import DBWN_D
 from model.DBWN_H import DBWN_H
-from dataset.dataset_UDC import Custom_Dataset
+from dataset.dataset_SYNTH import Custom_Dataset
 from losses import ContrastLoss
 import os
 import wandb
@@ -155,8 +155,8 @@ class Train():
             with torch.set_grad_enabled(False):
                 outputs = self.model(inputs)
                 _ = self.criterion(outputs,gt)
-            psnr_value.append(self.psnr(outputs,gt).item())
-            ssim_value.append(self.ssim(outputs,gt).item())
+            psnr_value.append(self.psnr(outputs,gt).mean().item())
+            ssim_value.append(self.ssim(outputs,gt).mean().item())
         torch.cuda.synchronize()
         wandb.log({'val_psnr':np.mean(psnr_value)})
         wandb.log({'val_ssim':np.mean(ssim_value)})

@@ -31,7 +31,13 @@ class Custom_Dataset(Dataset):
         for im_names in self.lq_im_file_list:
             self.lq_train_files[im_names] = Image.open(im_names).convert('RGB')
         if is_train:
-            self.train_transform = T.Compose([T.RandomCrop((im_shape[0],im_shape[1]))])
+            if (im_shape[0]==im_shape[1]):
+                self.train_transform = T.Compose([T.RandomCrop((im_shape[0],im_shape[1]))
+                ,T.RandomChoice([T.Lambda(lambda x: torch.rot90(x,k=1,dims=(2,3))),T.Lambda(lambda x: torch.rot90(x,k=2,dims=(2,3))),T.Lambda(lambda x: torch.rot90(x,k=3,dims=(2,3)))]),\
+                T.RandomChoice([T.GaussianBlur((5,5)),T.Lambda(lambda x:x),T.GaussianBlur((3,3)),T.GaussianBlur((7,7))])])
+            else:
+                self.train_transform = T.Compose([T.RandomCrop((im_shape[0],im_shape[1])),\
+                T.RandomChoice([T.GaussianBlur((5,5)),T.Lambda(lambda x:x),T.GaussianBlur((3,3)),T.GaussianBlur((7,7))])])
         self.tensor_transform = T.ToTensor()
     def __len__(self):
         return len(self.hq_im_file_list)
